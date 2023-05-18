@@ -1,0 +1,5 @@
+python-dotenv
+langchain
+openai
+playsound==1.2.2
+Flask

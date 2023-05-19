@@ -7,6 +7,7 @@ import os
 import sys
 import io
 import pygame
+import openai
 
 load_dotenv(find_dotenv())
 ELEVEN_LABS_API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
@@ -81,14 +82,27 @@ def home():
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
-    human_input = request.form['human_input']
-    message = get_response_from_ai(human_input)
-    get_voice_message(message)
-    return message
+    print("request form", request.form)
+    print("request files", request.files)
+    if "human_input" in request.form and request.form["human_input"] != "":
+        human_input = request.form['human_input']
+        print(human_input)
+        message = get_response_from_ai(human_input)
+        get_voice_message(message)
+        return message
+    elif "audio_input" in request.files:
+        audio_input = request.files['audio_input']
+        audio_input.save("temp_audio.webm")
+        audio_file = open("temp_audio.webm", "rb")
+        transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        message = get_response_from_ai(transcript.text)
+        get_voice_message(message)
+        return message
+    return "error"
 
 
 if __name__ == "__main__":
-    port_number = 5000
+    port_number = 3000
     if len(sys.argv) > 1:
         port_number = int(sys.argv[1])
     app.run(debug=True, port=port_number, host="0.0.0.0")

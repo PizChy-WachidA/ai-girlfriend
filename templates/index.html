@@ -5,19 +5,27 @@
 </head>
 <body>
     <h1>AI girlfriend</h1>
-    <form method="POST" action="/send_message">
+    <form id="text-message-form" method="POST" action="/send_message">
         <input type="text" name="human_input" placeholder="Enter your message">
         <button type="submit">Send</button>
     </form>
+    <button id="start-rec">Start Recording</button>
+    <button id="stop-rec" class="hidden">Stop Recording</button>
     <div id="response_message"></div>
 
     <script>
-        const form = document.querySelector('form');
+        const textMessageForm = document.getElementById('text-message-form');
+        const startRecButton = document.getElementById('start-rec');
+        const stopRecButton = document.getElementById('stop-rec');
         const responseMessage = document.getElementById('response_message');
 
-        form.addEventListener('submit', function(e) {
+        // Media Recorder variable and recorded chunks
+        let mediaRecorder;
+        let audioChunks = [];
+
+        textMessageForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const formData = new FormData(form);
+            const formData = new FormData(textMessageForm);
             fetch('/send_message', {
                 method: 'POST',
                 body: formData
@@ -26,7 +34,51 @@
             .then(data => {
                 responseMessage.innerHTML = data;
             });
-            form.reset();
+            textMessageForm.reset();
+        });
+
+        // Start Recording
+        startRecButton.addEventListener('click', function(e) {
+            // Swap buttons
+            startRecButton.classList.add('hidden');
+            stopRecButton.classList.remove('hidden');
+            // Begin recording
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    const options = {mimeType: 'audio/webm;codecs=opus'};
+                    mediaRecorder = new MediaRecorder(stream, options);
+                    mediaRecorder.start();
+
+                    mediaRecorder.addEventListener("dataavailable", event => {
+                        audioChunks.push(event.data);
+                    });
+                });
+        });
+
+        // Stop Recording
+        stopRecButton.addEventListener('click', function(e) {
+            // Swap buttons
+            startRecButton.classList.remove('hidden');
+            stopRecButton.classList.add('hidden');
+            // Stop recording
+            if(mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder.addEventListener("stop", () => {
+                    const audioBlob = new Blob(audioChunks);
+                    const formData = new FormData();
+                    formData.append('audio_input', audioBlob, 'audio.webm');
+                    console.log("formData:", formData)
+                    fetch('/send_message', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(data => {
+                        responseMessage.innerHTML = data;
+                    });
+                    audioChunks = [];  // clear the audio chunks for next recording
+                });
+            }
         });
     </script>
 </body>

@@ -1,7 +1,5 @@
 python-dotenv
 langchain
 openai
-vext
-vext.gi
 playsound==1.2.2
 Flask

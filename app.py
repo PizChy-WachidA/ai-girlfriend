@@ -88,7 +88,7 @@ def send_message():
 
 
 if __name__ == "__main__":
-    port_number = 3000
+    port_number = 5000
     if len(sys.argv) > 1:
         port_number = int(sys.argv[1])
     app.run(debug=True, port=port_number, host="0.0.0.0")

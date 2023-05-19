@@ -3,9 +3,10 @@ from langchain import OpenAI, LLMChain, PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 from dotenv import find_dotenv, load_dotenv
 import requests
-from playsound import playsound
 import os
 import sys
+import io
+import pygame
 
 load_dotenv(find_dotenv())
 ELEVEN_LABS_API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
@@ -61,9 +62,10 @@ def get_voice_message(message):
     response = requests.post(
         'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM?optimize_streaming_latency=0', json=payload, headers=headers)
     if response.status_code == 200 and response.content:
-        with open('audio.mp3', 'wb') as f:
-            f.write(response.content)
-        playsound('audio.mp3')
+        audio_data = io.BytesIO(response.content)
+        pygame.mixer.init()
+        pygame.mixer.music.load(audio_data)
+        pygame.mixer.music.play()
         return response.content
 
 
@@ -86,7 +88,7 @@ def send_message():
 
 
 if __name__ == "__main__":
-    port_number = 5000
+    port_number = 3000
     if len(sys.argv) > 1:
         port_number = int(sys.argv[1])
     app.run(debug=True, port=port_number, host="0.0.0.0")
